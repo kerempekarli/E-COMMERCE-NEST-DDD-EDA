@@ -1,0 +1,161 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - ecommerce-network
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    container_name: api-gateway
+    ports:
+      - '3000:3000'
+    depends_on:
+      - rabbitmq
+    env_file:
+      - ./services/api-gateway/.env
+    networks:
+      - ecommerce-network
+
+  product-service:
+    build:
+      context: ./services/product-service
+    container_name: product-service
+    ports:
+      - '3001:3001'
+    depends_on:
+      - rabbitmq
+      - product-db
+    env_file:
+      - ./services/product-service/.env
+    networks:
+      - ecommerce-network
+
+  product-db:
+    image: postgres:13
+    container_name: product-db
+    environment:
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_pass
+      POSTGRES_DB: product_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - product-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+
+  order-service:
+    build:
+      context: ./services/order-service
+    container_name: order-service
+    ports:
+      - '3002:3002'
+    depends_on:
+      - rabbitmq
+      - order-db
+    env_file:
+      - ./services/order-service/.env
+    networks:
+      - ecommerce-network
+
+  order-db:
+    image: postgres:13
+    container_name: order-db
+    environment:
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+      POSTGRES_DB: order_db
+    ports:
+      - '5433:5432'
+    volumes:
+      - order-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+
+  user-service:
+    build:
+      context: ./services/user-service
+    container_name: user-service
+    ports:
+      - '3003:3003'
+    depends_on:
+      - rabbitmq
+      - user-db
+    env_file:
+      - ./services/user-service/.env
+    networks:
+      - ecommerce-network
+
+  user-db:
+    image: postgres:13
+    container_name: user-db
+    environment:
+      POSTGRES_USER: user_user
+      POSTGRES_PASSWORD: user_pass
+      POSTGRES_DB: user_db
+    ports:
+      - '5434:5432'
+    volumes:
+      - user-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+    container_name: payment-service
+    ports:
+      - '3004:3004'
+    depends_on:
+      - rabbitmq
+      - payment-db
+    env_file:
+      - ./services/payment-service/.env
+    networks:
+      - ecommerce-network
+
+  payment-db:
+    image: postgres:13
+    container_name: payment-db
+    environment:
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_pass
+      POSTGRES_DB: payment_db
+    ports:
+      - '5435:5432'
+    volumes:
+      - payment-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    container_name: notification-service
+    ports:
+      - '3005:3005'
+    depends_on:
+      - rabbitmq
+    env_file:
+      - ./services/notification-service/.env
+    networks:
+      - ecommerce-network
+
+volumes:
+  product-data:
+  order-data:
+  user-data:
+  payment-data:
+
+networks:
+  ecommerce-network:
